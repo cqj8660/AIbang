@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>AI-五子棋</title>
+  <link rel="stylesheet" type="text/css" href="css/style.css">
+</head>
+
+<body>
+<canvas id ="chess" width ="450px" height="450px"></canvas>
+<script type="text/javascript">
+  var chess = document.getElementById("chess");
+  var chessBoard = [];//记录棋盘的下子情况
+  var context = chess.getContext("2d");
+  var img = new Image();
+  img.src = "/photo/background.png";
+  for (var i = 0; i < 15; i++)//棋盘初始化
+  {
+      chessBoard[i] = [];
+      for (var j = 0; j < 15; j++)
+      chessBoard[i][j] = 0;
+  }
+  
+  img.onload = function()
+  {
+    context.drawImage(img,0,0,450,450);
+    drawLine();
+    //画棋子
+  }
+  var onestep = function(i,j,type)//画棋子的函数，每次点击调用
+  {
+    context.beginPath();
+    context.arc(15+i*30,15+j*30,13,0,2*Math.PI);
+    context.closePath();
+    var gra = context.createRadialGradient(15+i*30,15+j*30,15,15+i*30,15+j*30,0);
+    if(type)//如果是黑棋
+    {
+      gra.addColorStop(0,"#0a0a0a");
+      gra.addColorStop(1,"#636766");
+    }//否则是白棋
+    else
+    {
+      gra.addColorStop(0,"#D1D1D1");
+      gra.addColorStop(1,"#F9F9F9");
+    }
+    context.fillStyle = gra;
+    context.fill();
+  }
+
+  var type = true;//决定是白字还是黑子
+  chess.onclick = function(e)
+  {
+    var x = e.offsetX;
+    var y = e.offsetY;
+    var i = Math.floor(x/30);
+    var j = Math.floor(y/30);
+    if(chessBoard[i][j] == 0)
+    {
+    onestep(i,j,type);
+    if(type) chessBoard[i][j] = 1;
+    else chessBoard[i][j] = 2;
+    type = !type;
+    }
+  }
+
+  function drawLine(){
+  for(var i = 0; i < 15; i++){
+    context.moveTo(15,15+i*30);
+    context.lineTo(435,15+i*30);
+    context.stroke();
+    context.moveTo(15+i*30,15);
+    context.lineTo(15+i*30,435);
+    context.stroke();
+    }
+  }
+
+</script>
+</body>
+</html>
