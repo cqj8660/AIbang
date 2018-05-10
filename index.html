@@ -8,12 +8,14 @@
 
 <body>
 <canvas id ="chess" width ="450px" height="450px"></canvas>
+
 <script type="text/javascript">
+  console.log("hello");
   var chess = document.getElementById("chess");
   var chessBoard = [];//记录棋盘的下子情况
   var context = chess.getContext("2d");
   var img = new Image();
-  img.src = "/photo/background.png";
+  img.src = "./photo/background.png";
   for (var i = 0; i < 15; i++)//棋盘初始化
   {
       chessBoard[i] = [];
