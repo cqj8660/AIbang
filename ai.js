@@ -1,15 +1,3 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>AI-五子棋</title>
-  <link rel="stylesheet" type="text/css" href="css/style.css">
-</head>
-
-<body>
-<canvas id ="chess" width ="450px" height="450px"></canvas>
-
-<script type="text/javascript">
   var chess = document.getElementById("chess");
   var chessBoard = [];//记录棋盘的下子情况
   var context = chess.getContext("2d");
@@ -66,7 +54,7 @@
   var type = true;//决定是白字还是黑子
   chess.onclick = function(e)
   {
-    if(!me) return;
+	  if(!me) return;
     var x = e.offsetX;
     var y = e.offsetY;
     var i = Math.floor(x/30);
@@ -76,7 +64,7 @@
     onestep(i,j,type);
     type = !type;
     }
-   if(!gameover)
+	 if(!gameover)
    {
       me = !me;
       ai();
@@ -85,8 +73,9 @@
   }
   function ai()
   {
-      var point = maxmin(chessBoard,2);
+    var point = maxmin(chessBoard,2);
     onestep(point[0],point[1],type);
+	
   }
   var maxmin = function(board,depth)
   {
@@ -112,7 +101,7 @@
 
       board[P[0]][P[1]] = 0;
       var strategy = choices[Math.floor(choices.length * Math.random())];//在可以作出的决策中随机返回一个作为落子
-
+      return strategy;
     }
   }
   var min = function(board,depth)
@@ -167,7 +156,3 @@
     context.stroke();
     }
   }
-
-</script>
-</body>
-</html>
