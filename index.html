@@ -138,6 +138,46 @@
     }
     return false;
   }
+  var reduce = function(board)
+  {
+    var line = [];
+
+    //把每一行加入
+    for(var i = 0; i < 15; i++)
+      line.push(board[i]);
+
+    //纵向
+    for(var i = 0; i < 15; i++)
+    {
+      var col = [];
+      for(var j = 0; j < 15; j++)
+        col.push(board[j][i]);
+      line.push(col);
+    }
+
+    //"撇"方向
+
+    for(var len = 0; len < 15; len++)
+    {
+      var col = [];
+      for(var i = 0; i <= len; i++)
+        col.push(board[i][len-i]);
+      line.push(col);
+    }
+
+    for(var len = 0; len < 14; len++)
+    {
+      var col = [];
+      for(var i = 14; i >= 14 - len; i--)
+        col.push(board[28 - len - i][i]);
+    }
+    //撇的方向完成
+
+  }
+  var evaluate = function(board)
+  {
+    reduce(board);
+  }
   var maxmin = function(board,depth)
   {
     var best = MIN;
