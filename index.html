@@ -85,8 +85,58 @@
   }
   function ai()
   {
-      var point = maxmin(chessBoard,2);
+    var point = maxmin(chessBoard,2);
     onestep(point[0],point[1],type);
+  }
+  var generate = function(board,depth)
+  {
+    var fives = [];//成连五个
+    var fours = [];
+    var twothress = [];// 成两个三
+    var threes = [];
+    var twos = [];
+    var neighbors = [];
+    var nextNeighbors = [];
+
+    for(var i = 0; i < 15; i++)
+      for(var j = 0; j < 15; j++)
+      {
+        if(board[i][j] == 0)//这个位置没有棋下
+          if(hasNeighbor(board,[i,j],1,1))//并且有邻居
+          {
+            //后续可以加入启发式搜索,待补
+            neighbors.push([i,j]);
+          }
+         /* else if(depth >= 2 && hasNeighbor(board,[i,j],2,2))
+          {//如果深度大于两层;就是按照邻居的远近做了一个排序
+            //排序对AB剪枝的效率起了决定性作用。
+            nextNeighbors.push([i,j]);
+          }*/
+      }
+
+      return neighbors.concat(nextNeighbors);
+  }
+  var hasNeighbor = function(board,p,distance,count)
+  {
+    var startX = p[0] - distance;
+    var endX = p[0] + distance;//x的搜索区域
+    var startY = p[1] - distance;
+    var endY = p[1] + distance;//Y的搜索区域
+    for(var i = startX; i <= endX; i++)
+    {
+      if(i < 0 || i >= 15) continue;
+      for(var j = startY; j <= endY; j++)
+      {
+        if(j < 0 || j >= 15) continue;
+        if(i == p[0] && j == p[1]) continue;
+        if(board[i][j] != 0)
+          {
+            count--;
+            if(count <= 0) return true;
+          }
+      }
+    }
+    return false;
   }
   var maxmin = function(board,depth)
   {
@@ -111,8 +161,9 @@
       }
 
       board[P[0]][P[1]] = 0;
-      var strategy = choices[Math.floor(choices.length * Math.random())];//在可以作出的决策中随机返回一个作为落子
-
+      var strategy = choices[Math.floor(choices.length * Math.random())];
+      //在可以作出的决策中随机返回一个作为落子
+      return strategy;
     }
   }
   var min = function(board,depth)
