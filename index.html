@@ -8,7 +8,6 @@
 
 <body>
 <canvas id ="chess" width ="450px" height="450px"></canvas>
-
 <script type="text/javascript">
   var chess = document.getElementById("chess");
   var chessBoard = [];//记录棋盘的下子情况
@@ -59,11 +58,11 @@
     }
     context.fillStyle = gra;
     context.fill();
-        if(type) chessBoard[i][j] = 1;
-    else chessBoard[i][j] = 2;
+        if(type) chessBoard[j][i] = 1;
+    else chessBoard[j][i] = 2;
   }
 
-  var type = true;//决定是白字还是黑子
+  var type = true;//决定是白字还是黑子,注意：2表示白，1表示黑
   chess.onclick = function(e)
   {
     if(!me) return;
@@ -71,7 +70,7 @@
     var y = e.offsetY;
     var i = Math.floor(x/30);
     var j = Math.floor(y/30);
-    if(chessBoard[i][j] == 0)
+    if(chessBoard[j][i] == 0)
     {
     onestep(i,j,type);
     type = !type;
@@ -170,9 +169,29 @@
       var col = [];
       for(var i = 14; i >= 14 - len; i--)
         col.push(board[28 - len - i][i]);
+      line.push(col);
     }
     //撇的方向完成
 
+    //“捺”方向
+    for(var len = 15; len > 0; len--)
+    {
+      var col = [];
+      for(var i = 0; i < len; i++)
+          col.push(board[i][i+15-len]);
+      line.push(col);
+    }
+
+    for(var len = 14; len > 0; len--)
+    {
+      var col = [];
+      for(var i = 0; i < len; i++)
+        col.push(board[i+15-len][i]);
+      line.push(col);
+    }
+    //捺的方向完成
+
+    return line;
   }
   var evaluate = function(board)
   {
