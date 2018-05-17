@@ -33,7 +33,7 @@
       for (var j = 0; j < 15; j++)
       chessBoard[i][j] = 0;
   }
-  
+
   img.onload = function()
   {
     context.drawImage(img,0,0,450,450);
@@ -58,8 +58,8 @@
     }
     context.fillStyle = gra;
     context.fill();
-        if(type) chessBoard[j][i] = 1;
-    else chessBoard[j][i] = 2;
+    if(type) chessBoard[i][j] = 1;
+    else chessBoard[i][j] = 2;
   }
 
   var type = true;//决定是白字还是黑子,注意：2表示白，1表示黑
@@ -70,7 +70,7 @@
     var y = e.offsetY;
     var i = Math.floor(x/30);
     var j = Math.floor(y/30);
-    if(chessBoard[j][i] == 0)
+    if(chessBoard[i][j] == 0)
     {
     onestep(i,j,type);
     type = !type;
@@ -79,12 +79,13 @@
    {
       me = !me;
       ai();
+      type = !type;
       me = !me;
    }
   }
   function ai()
   {
-    var point = maxmin(chessBoard,2);
+    var point = maxmin(chessBoard,1);
     onestep(point[0],point[1],type);
   }
   var generate = function(board,depth)
@@ -139,11 +140,11 @@
   }
   var reduce = function(board)
   {
-    var line = [];
+    var lines = [];
 
     //把每一行加入
     for(var i = 0; i < 15; i++)
-      line.push(board[i]);
+      lines.push(board[i]);
 
     //纵向
     for(var i = 0; i < 15; i++)
@@ -151,7 +152,7 @@
       var col = [];
       for(var j = 0; j < 15; j++)
         col.push(board[j][i]);
-      line.push(col);
+      lines.push(col);
     }
 
     //"撇"方向
@@ -161,7 +162,7 @@
       var col = [];
       for(var i = 0; i <= len; i++)
         col.push(board[i][len-i]);
-      line.push(col);
+      lines.push(col);
     }
 
     for(var len = 0; len < 14; len++)
@@ -169,7 +170,7 @@
       var col = [];
       for(var i = 14; i >= 14 - len; i--)
         col.push(board[28 - len - i][i]);
-      line.push(col);
+      lines.push(col);
     }
     //撇的方向完成
 
@@ -179,7 +180,7 @@
       var col = [];
       for(var i = 0; i < len; i++)
           col.push(board[i][i+15-len]);
-      line.push(col);
+      lines.push(col);
     }
 
     for(var len = 14; len > 0; len--)
@@ -187,15 +188,82 @@
       var col = [];
       for(var i = 0; i < len; i++)
         col.push(board[i+15-len][i]);
-      line.push(col);
+      lines.push(col);
     }
     //捺的方向完成
 
-    return line;
+    return lines;
+  }
+  var value = function(count,block)
+  {
+    if(count == 5) return FIVE;
+    if(block == 0)
+    {
+      switch(count)
+      {
+        case 1: return ONE;
+        case 2: return TWO;
+        case 3: return THREE;
+        case 4: return FOUR;
+      }
+    }
+    else
+    {
+      switch(count)
+      {
+        case 1: return HALF_ONE
+        case 2: return HALF_TWO;
+        case 3: return HALF_THREE;
+        case 4: return HALF_FOUR;
+
+      }
+    }
+
+  }
+  var eva_single_line = function(line,type)
+  {
+    var count = 0;//连子数
+    var block = 0;//阻塞数
+    var score = 0;//该行的得分
+    for(var i = 0; i < line.length; i++)
+    {
+      count = 0;
+      block = 0;
+      if(line[i] == type)//如果是待评估的棋子类型
+      {
+        count++;
+        if(i == 0) block = 1;
+        else if(line[i-1] != 0) block = 1;
+        i++;
+        while(line[i] == type && i < line.length)
+        {
+          count++;
+          i++;
+        }
+        if(line[i] != 0 || i == line.length)
+          block++;
+        if(block == 2) continue;
+        else score += value(count,block);
+      }
+    }
+    return score;
+
+
+  }  
+  var eva = function(lines,type)
+  {
+    var score = 0;
+    var count = lines.length;
+    for(var i = 0; i < count; i++)
+      score += eva_single_line(lines[i],type);
+    return score;
   }
   var evaluate = function(board)
   {
-    reduce(board);
+    var lines = reduce(board);
+    var score_AI = eva(lines,2);//计算AI的评估函数值
+    var score_user = eva(lines,1);
+    return score_AI - score_user;
   }
   var maxmin = function(board,depth)
   {
@@ -220,15 +288,15 @@
       }
 
       board[P[0]][P[1]] = 0;
+    }
       var strategy = choices[Math.floor(choices.length * Math.random())];
       //在可以作出的决策中随机返回一个作为落子
       return strategy;
-    }
   }
   var min = function(board,depth)
   {
      var value = evaluate(board);//对当前局面进行评估
-     if(depth <= 0 || win(board))
+     if(depth <= 0 || gameover)
       return value;
 
     var best = MAX;
@@ -237,7 +305,7 @@
     for(var i = 0; i < points.length; i++)
     {
       var P = points[i];
-      board[P[0]][P[0]] = 1;//将这个位置标记为黑子（？？？？）
+      board[P[0]][P[1]] = 1;//将这个位置标记为黑子（？？？？）
       var v = max(board,depth - 1);
       board[P[0]][P[1]] = 0;//回溯回来要置零
       if(v < best)
@@ -249,7 +317,7 @@
   var max = function(board,depth)
   {
      var value = evaluate(board);//对当前局面进行评估
-     if(depth <= 0 || win(board))
+     if(depth <= 0 || gameover)
       return value;
 
     var best = MIN;
@@ -258,8 +326,8 @@
     for(var i = 0; i < points.length; i++)
     {
       var P = points[i];
-      board[P[0]][P[0]] = 2;//将这个位置标记为黑子（？？？？）
-      var v = max(board,depth - 1);
+      board[P[0]][P[0]] = 1;//将这个位置标记为黑子（？？？？）
+      var v = min(board,depth - 1);
       board[P[0]][P[1]] = 0;//回溯回来要置零
       if(v > best)
         best = v;
