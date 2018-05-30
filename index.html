@@ -8,12 +8,22 @@
 
 <body>
 <canvas id ="chess" width ="450px" height="450px"></canvas>
+<!-- <button type="button" id="mode0" name="button">初级难度</button>
+<button type="button" id="mode1" name="button">中级难度</button>
+<button type="button" id="mode2" name="button">高级难度</button> -->
+<div>
+<button id="mode0" class="button button-3d button-action button-pill">初级难度</button>
+<button id="mode1" class="button button-3d button-action button-pill">中级难度</button>
+<button id="mode2" class="button button-3d button-action button-pill">高级难度</button>
+</div>
+<script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
 <script type="text/javascript">
   var chess = document.getElementById("chess");
   var chessBoard = [];//记录棋盘的下子情况
   var context = chess.getContext("2d");
   var me = true;//记录当前是否由玩家下棋
   var gameover = false;//记录游戏是否结束
+  var mode = 2;
   var img = new Image();
   var MIN = -1000000;//min_value
   var MAX = 1000000;//max_value;
@@ -65,7 +75,7 @@
   var type = true;//决定是白字还是黑子,注意：2表示白，1表示黑
   chess.onclick = function(e)
   {
-    if(!me) return;
+    if(!me || gameover) return;
     var x = e.offsetX;
     var y = e.offsetY;
     var i = Math.floor(x/30);
@@ -75,6 +85,14 @@
     onestep(i,j,type);
     type = !type;
     }
+    else return;
+    if(isover(chessBoard) == 1)
+    {
+      setTimeout(function(){
+      alert('恭喜你 获得胜利!');
+      },0)
+      gameover = 1;
+    }
    if(!gameover)
    {
       me = !me;
@@ -82,39 +100,34 @@
       type = !type;
       me = !me;
    }
+   if(isover(chessBoard) == 2)
+   {
+    setTimeout(function(){
+　　 alert('很遗憾，你被AI打败了');
+    },0)
+    gameover = 1;
+   }
+
   }
   function ai()
   {
-    var point = maxmin(chessBoard,1);
+    var point = maxmin(chessBoard,mode);
     onestep(point[0],point[1],type);
   }
   var generate = function(board,depth)
   {
-    var fives = [];//成连五个
-    var fours = [];
-    var twothress = [];// 成两个三
-    var threes = [];
-    var twos = [];
     var neighbors = [];
-    var nextNeighbors = [];
-
     for(var i = 0; i < 15; i++)
       for(var j = 0; j < 15; j++)
       {
         if(board[i][j] == 0)//这个位置没有棋下
           if(hasNeighbor(board,[i,j],1,1))//并且有邻居
           {
-            //后续可以加入启发式搜索,待补
             neighbors.push([i,j]);
           }
-         /* else if(depth >= 2 && hasNeighbor(board,[i,j],2,2))
-          {//如果深度大于两层;就是按照邻居的远近做了一个排序
-            //排序对AB剪枝的效率起了决定性作用。
-            nextNeighbors.push([i,j]);
-          }*/
       }
 
-      return neighbors.concat(nextNeighbors);
+      return neighbors;
   }
   var hasNeighbor = function(board,p,distance,count)
   {
@@ -249,7 +262,20 @@
     return score;
 
 
-  }  
+  }
+  var isover = function(board)
+  {
+    var lines = reduce(board);
+    var score;
+    for(var i = 0; i < lines.length; i++)
+    {
+      score = eva_single_line(lines[i],1);
+      if(score >= FIVE) return 1;
+      score = eva_single_line(lines[i],2);//一定要检测单行是否有连五
+      if(score >= FIVE) return 2;
+    }
+    return 0;
+  }
   var eva = function(lines,type)
   {
     var score = 0;
@@ -268,14 +294,14 @@
   var maxmin = function(board,depth)
   {
     var best = MIN;
-    var points = generate(board,depth);
+    var points = generate(board, depth);
     //生成待选的列表
     var choices = [];//可以下的那些棋(即作出的决策)
     for(var i = 0; i < points.length; i++)
     {
       var P = points[i];//从中选出一个结点
       board[P[0]][P[1]] = 2;//将这个位置标记为白子（？？？？）
-      var v = min(board,depth - 1);//找最大值(?为什么)
+      var v = min(board,depth - 1, MAX, best > MIN ? best : MIN);//找最大值(?为什么)
 
       if(v == best)
         choices.push(P);
@@ -293,10 +319,10 @@
       //在可以作出的决策中随机返回一个作为落子
       return strategy;
   }
-  var min = function(board,depth)
+  var min = function(board,depth,alpha,beta)
   {
      var value = evaluate(board);//对当前局面进行评估
-     if(depth <= 0 || gameover)
+     if(depth <= 0 || isover(board))
       return value;
 
     var best = MAX;
@@ -306,18 +332,19 @@
     {
       var P = points[i];
       board[P[0]][P[1]] = 1;//将这个位置标记为黑子（？？？？）
-      var v = max(board,depth - 1);
+      var v = max(board,depth - 1, best < alpha ? best : alpha, beta);
       board[P[0]][P[1]] = 0;//回溯回来要置零
       if(v < best)
         best = v;
+      if(v < beta) break;//beta剪枝
     }
     return best;//返回当前需要的最小值
   }
 
-  var max = function(board,depth)
+  var max = function(board,depth,alpha,beta)
   {
      var value = evaluate(board);//对当前局面进行评估
-     if(depth <= 0 || gameover)
+     if(depth <= 0 || isover(board))
       return value;
 
     var best = MIN;
@@ -326,15 +353,51 @@
     for(var i = 0; i < points.length; i++)
     {
       var P = points[i];
-      board[P[0]][P[0]] = 1;//将这个位置标记为黑子（？？？？）
-      var v = min(board,depth - 1);
+      board[P[0]][P[1]] = 2;//将这个位置标记为白子（AI）
+      var v = min(board,depth - 1, alpha, best > beta ? best : beta);
       board[P[0]][P[1]] = 0;//回溯回来要置零
       if(v > best)
         best = v;
+      if(v > alpha) break;//alpha剪枝
     }
     return best;//返回当前需要的最大值
 
   }
+  var refresh = function()
+  {
+    gameover = 0;
+    for(var i = 0; i < 15; i++)
+    for(var j = 0; j < 15; j++)
+    chessBoard[i][j] = 0;
+    var canvas = $('#chess');  //选择要擦除的canvas元素
+    var Context = chess.getContext('2d');  //获取canvas上下文
+    Context.clearRect(0, 0, canvas.width(), canvas.height());
+    img.onload();
+  }
+  $('#mode0').click(function(e){
+    mode = 1;
+    console.log(mode);
+    setTimeout(function(){
+    refresh();
+    alert('初级模式!');
+    },0)
+  })
+  $('#mode1').click(function(e){
+    mode = 2;
+    console.log(mode);
+    setTimeout(function(){
+    refresh();
+    alert('中级模式!');
+    },0)
+  })
+  $('#mode2').click(function(e){
+    mode = 4;
+    console.log(mode);
+    setTimeout(function(){
+    refresh();
+    alert('高级模式!');
+    },0)
+  })
   function drawLine(){
   for(var i = 0; i < 15; i++){
     context.moveTo(15,15+i*30);
